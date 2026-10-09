@@ -6,12 +6,14 @@ workflow:
   completion_command: uv run pytest
   lint_command: uv run ruff check .
   format_command: uv run ruff format .
+  codex_review:
+    pre_push_cap: 1
   review_disposition:
-    enabled: true
-    mode: authoritative
-    max_auto_overrides: 1
+    enabled: false
+    mode: shadow
+    max_auto_overrides: 0
     judge:
-      enabled: true
+      enabled: false
 docs:
   adr_dir: docs/decisions/adrs/
 example_paths:
