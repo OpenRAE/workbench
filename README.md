@@ -1,5 +1,7 @@
 # ACES Scenario Workbench
 
+[![OpenSSF Scorecard](https://api.scorecard.dev/projects/github.com/OpenRAE/workbench/badge)](https://scorecard.dev/viewer/?uri=github.com/OpenRAE/workbench)
+
 A collaborative review surface for [ACES](https://github.com/Brad-Edwards/aces)
 scenario packs. It turns validated pack content into an addressable,
 database-backed workspace where authors, reviewers, and stakeholders inspect
