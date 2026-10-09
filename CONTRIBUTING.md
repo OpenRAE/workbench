@@ -37,6 +37,32 @@ after changing `.pre-commit-config.yaml`.
 It is normal for the formatters to make changes on the first run — stage them
 and commit.
 
+## Continuous integration
+
+`.github/workflows/ci.yml` runs on every pull request and on every push to `dev`
+and `main`. It is the full gate, and the same for every change: no job is
+skipped by path, by change scope, or by the size of a change.
+
+| Job | Verifies | Starts | Reproduce locally |
+| --- | --- | --- | --- |
+| `audit` | No known vulnerability in the locked runtime dependencies (`pip-audit --strict`) | At once | `uv export --frozen --no-dev --all-extras --no-emit-project --no-hashes --format requirements-txt -o audit-requirements.txt`, then `uvx pip-audit --strict --no-deps --requirement audit-requirements.txt` |
+| `lint` | `ruff check` and `ruff format --check` | At once | `uv run ruff check .` and `uv run ruff format --check .` |
+| `test` | The whole pytest suite with coverage; uploads `coverage.xml` | At once | `uv run pytest -n auto` (as CI) or `uv run pytest` (serial) |
+| `sonar` | SonarCloud analysis and quality gate over the sources and `coverage.xml` (Dependabot pull requests skip the scan step: the token is not available to them) | When `test` passes | CI only (needs `SONAR_TOKEN`) |
+
+The PR title guard (`pr-title.yml`) runs separately on pull requests into `dev`.
+
+**Fast feedback.** `audit`, `lint` and `test` start together, and `sonar` waits
+only for the coverage report it analyses. A lint or format failure no longer
+stops the tests or the analysis from running.
+
+**Test ownership.** There are no shards. The `test` job owns the whole suite:
+pytest-xdist schedules every collected test exactly once across the runner's
+CPUs, and pytest-cov merges the workers' coverage into the single
+`coverage.xml`, the same input a serial run produces. To debug a failure, rerun
+just that test serially, for example
+`uv run pytest tests/test_auth.py::test_login_view_authenticates`.
+
 ## Branching, releases, and versioning
 
 - Feature branches open PRs into `dev`; `dev` is promoted to `main` by a PR.
