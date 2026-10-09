@@ -1,0 +1,64 @@
+name: OpenSSF Scorecard
+
+# Publishes an OpenSSF Scorecard supply-chain posture assessment for this
+# repository and backs the README badge (#53). Scorecard is advisory: it reports
+# posture and is not a merge gate. The `audit` job in ci.yml remains the
+# dependency-vulnerability gate.
+#
+# `publish_results: true` subjects this workflow to Scorecard's publisher
+# validation. It rejects results when the workflow sets top-level `env` or
+# `defaults` or any workflow-level write permission, or when the job sets `env`
+# or `defaults`, uses a container or services, runs on anything but an Ubuntu
+# hosted runner, or calls an action outside Scorecard's approved list. Keep this
+# job to the four actions below.
+#
+# Token boundary: the workflow defaults to read-only. The job adds only
+# `security-events: write` (upload the SARIF to code scanning) and
+# `id-token: write` (OIDC, so api.scorecard.dev can verify that the result came
+# from this repository). No PAT or repository secret is used, and the job has no
+# `run:` step, so checked-out content never executes with that authority.
+#
+# Scorecard publishes only from the default branch, so both triggers act on
+# `main`: each push to `main`, plus a weekly run that keeps the published result
+# and the badge from going stale between pushes.
+on:
+  push:
+    branches: [main]
+  schedule:
+    - cron: "43 4 * * 1"
+
+permissions:
+  contents: read
+
+jobs:
+  analysis:
+    name: Scorecard analysis
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      security-events: write   # upload the SARIF to code scanning
+      id-token: write          # OIDC proof of origin when publishing to api.scorecard.dev
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Run Scorecard analysis
+        uses: ossf/scorecard-action@2d1146689b8cda280b9bc96326124645441f03bc # v2.4.4
+        with:
+          results_file: results.sarif
+          results_format: sarif
+          publish_results: true
+
+      - name: Upload SARIF artifact
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: scorecard-sarif
+          path: results.sarif
+          retention-days: 5
+
+      - name: Upload SARIF to code scanning
+        uses: github/codeql-action/upload-sarif@2892aa5e19bbd11bc0cff5427e3b750a04d9e3c2 # v4.38.2
+        with:
+          sarif_file: results.sarif
