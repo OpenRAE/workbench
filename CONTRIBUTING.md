@@ -48,13 +48,13 @@ skipped by path, by change scope, or by the size of a change.
 | `audit` | No known vulnerability in the locked runtime dependencies (`pip-audit --strict`) | At once | `uv export --frozen --no-dev --all-extras --no-emit-project --no-hashes --format requirements-txt -o audit-requirements.txt`, then `uvx pip-audit --strict --no-deps --requirement audit-requirements.txt` |
 | `lint` | `ruff check` and `ruff format --check` | At once | `uv run ruff check .` and `uv run ruff format --check .` |
 | `test` | The whole pytest suite with coverage; uploads `coverage.xml` | At once | `uv run pytest -n auto` (as CI) or `uv run pytest` (serial) |
-| `sonar` | SonarCloud analysis and quality gate over the sources and `coverage.xml` | When `test` finishes | CI only (needs `SONAR_TOKEN`) |
+| `sonar` | SonarCloud analysis and quality gate over the sources and `coverage.xml` (Dependabot pull requests skip the scan step: the token is not available to them) | When `test` passes | CI only (needs `SONAR_TOKEN`) |
 
 The PR title guard (`pr-title.yml`) runs separately on pull requests into `dev`.
 
 **Fast feedback.** `audit`, `lint` and `test` start together, and `sonar` waits
 only for the coverage report it analyses. A lint or format failure no longer
-stops the tests or the analysis, so a single push reports every failing check.
+stops the tests or the analysis from running.
 
 **Test ownership.** There are no shards. The `test` job owns the whole suite:
 pytest-xdist schedules every collected test exactly once across the runner's
