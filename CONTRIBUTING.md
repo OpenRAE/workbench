@@ -40,8 +40,8 @@ and commit.
 ## Continuous integration
 
 `.github/workflows/ci.yml` runs on every pull request and on every push to `dev`
-and `main`. It is the full gate, and the same for every change: no job is
-skipped by path, by change scope, or by the size of a change.
+and `main`. There is no change-based lane: no job is skipped by path, by change
+scope, or by the size of a change.
 
 | Job | Verifies | Starts | Reproduce locally |
 | --- | --- | --- | --- |
@@ -52,9 +52,10 @@ skipped by path, by change scope, or by the size of a change.
 
 The PR title guard (`pr-title.yml`) runs separately on pull requests into `dev`.
 
-**Fast feedback.** `audit`, `lint` and `test` start together, and `sonar` waits
-only for the coverage report it analyses. A lint or format failure no longer
-stops the tests or the analysis from running.
+**Fast feedback.** `audit`, `lint` and `test` have no dependencies and start
+together. `sonar` depends only on `test`, whose `coverage.xml` it analyses, and
+runs when `test` passes, so a lint or format failure does not stop the tests or
+the analysis.
 
 **Test ownership.** There are no shards. The `test` job owns the whole suite:
 pytest-xdist schedules every collected test exactly once across the runner's
