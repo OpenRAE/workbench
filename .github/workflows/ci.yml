@@ -13,6 +13,12 @@ concurrency:
 permissions:
   contents: read
 
+# CI runs on every pull request and on pushes to dev and main, with no path or
+# change-size filter. `audit`, `lint` and `test` have no dependencies and start
+# together; `sonar` depends only on `test`, whose coverage.xml it analyses, and
+# runs when `test` passes, so a lint failure does not stop the tests or the
+# analysis. CONTRIBUTING.md describes each job and its local reproduction
+# command.
 jobs:
   audit:
     runs-on: ubuntu-latest
@@ -27,6 +33,19 @@ jobs:
       - name: Audit dependencies for known vulnerabilities
         run: uvx pip-audit --strict --no-deps --requirement audit-requirements.txt
 
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7.0.1
+        with:
+          persist-credentials: false
+      - name: Install uv
+        uses: astral-sh/setup-uv@v9.0.0
+      - name: Lint
+        run: uv run ruff check .
+      - name: Format check
+        run: uv run ruff format --check .
+
   test:
     runs-on: ubuntu-latest
     steps:
@@ -35,12 +54,10 @@ jobs:
           fetch-depth: 0
       - name: Install uv
         uses: astral-sh/setup-uv@v9.0.0
-      - name: Lint
-        run: uv run ruff check .
-      - name: Format check
-        run: uv run ruff format --check .
+      # pytest-xdist runs every collected test exactly once, spread over the
+      # runner's CPUs; pytest-cov combines the workers' data into one coverage.xml.
       - name: Test with coverage
-        run: uv run pytest
+        run: uv run pytest -n auto
       - name: Upload coverage report
         if: always()
         uses: actions/upload-artifact@v7

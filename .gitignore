@@ -20,6 +20,9 @@ htmlcov/
 .pytest_cache/
 .ruff_cache/
 
+# Dependency export written by the audit reproduction command (CONTRIBUTING.md)
+audit-requirements.txt
+
 # Local-only working notes (never committed)
 .local/
 
